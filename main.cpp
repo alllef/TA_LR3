@@ -18,22 +18,44 @@ public:
 };
 
 class BinarySearchTree {
-    TreeNode *root;
+    TreeNode *root = nullptr;
 
-public:
-    void add(int data) {
+private:
+    void addSec(TreeNode *rootNode, TreeNode *addNode) {
+        if (root == nullptr) root = addNode;
+        else {
+            while (rootNode != nullptr) {
+                if (addNode->data > root->data) {
+                    if (rootNode->rightAddress != nullptr) rootNode = rootNode->rightAddress;
+                    else {
+                        addNode->parent = root;
+                        root->rightAddress = addNode;
+                        break;
+                    }
+                } else if (addNode->data < root->data) {
+                    if (rootNode->leftAddress != nullptr)rootNode = rootNode->leftAddress;
+                    else {
+                        addNode->parent = rootNode;
+                        rootNode->leftAddress = addNode;
+                        break;
+                    }
+                }
 
-        while (root != nullptr) {
-            if (data > root->data)root = root->rightAddress;
-            else root = root->leftAddress;
-        }
-
-        root = new TreeNode(nullptr, nullptr, root, data);
-        while (root->parent != nullptr){
-            root = root->parent;
+                while (addNode->parent != nullptr) {
+                    addNode = addNode->parent;
+                }
+                rootNode = addNode;
+            }
         }
     }
 
+public:
+
+    void add(int data) {
+
+        auto *node = new TreeNode(nullptr, nullptr, nullptr, data);
+        addSec(root, node);
+    }
 
     bool findData(int data) {
         TreeNode *currentNode = root;
