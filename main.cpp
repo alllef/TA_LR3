@@ -11,13 +11,13 @@ public:
     TreeNode *leftAddress = nullptr;
     TreeNode *rightAddress = nullptr;
     TreeNode *parent = nullptr;
-    int data = NULL;
+    int key = NULL;
     COLOR color;
 
     TreeNode(TreeNode *leftAddress, TreeNode *rightAddress, TreeNode *parent, int data, COLOR color) {
         this->leftAddress = leftAddress;
         this->rightAddress = rightAddress;
-        this->data = data;
+        this->key = data;
         this->parent = parent;
         this->color = color;
     }
@@ -27,31 +27,34 @@ class BinarySearchTree {
     TreeNode *root = nullptr;
 
 public:
-    void add(int data) {
+    void add(int key) {
+
         if (root == nullptr) {
-            root = new TreeNode(nullptr, nullptr, nullptr, data, black);
+            root = new TreeNode(nullptr, nullptr, nullptr, key, black);
 
         } else {
             while (root != nullptr) {
 
-                if (data > root->data) {
+                if (key > root->key) {
                     if (root->rightAddress != nullptr) root = root->rightAddress;
                     else {
-                        root->rightAddress = new TreeNode(nullptr, nullptr, root, data, red);
+                        root->rightAddress = new TreeNode(nullptr, nullptr, root, key, red);
                         root = root->rightAddress;
                         break;
                     }
-                } else if (data < root->data) {
+                } else if (key < root->key) {
                     if (root->leftAddress != nullptr)root = root->leftAddress;
 
                     else {
-                        root->leftAddress = new TreeNode(nullptr, nullptr, root, data, red);
+                        root->leftAddress = new TreeNode(nullptr, nullptr, root, key, red);
                         root = root->leftAddress;
                         break;
                     }
                 }
             }
         }
+
+
         while (root->parent != nullptr) {
 
             if (root->parent->color == red && root->color == red) {
@@ -110,10 +113,13 @@ public:
         if (node->parent == nullptr) {
             tmpNode->parent = node->parent;
             node->parent = tmpNode;
+        } else {
+            tmpNode->parent = node->parent;
+            node->parent->rightAddress = tmpNode;
         }
-        else node->parent->rightAddress=tmpNode;
         node->leftAddress = tmpNode->rightAddress;
         tmpNode->rightAddress = node;
+        node->parent = tmpNode;
     }
 
     void rotateLeft(TreeNode *node) {
@@ -122,9 +128,13 @@ public:
             tmpNode->parent = node->parent;
             node->parent = tmpNode;
         }
-        else node->parent->rightAddress=tmpNode;
+        else {
+            tmpNode->parent = node->parent;
+            node->parent->rightAddress = tmpNode;
+        }
         node->rightAddress = tmpNode->leftAddress;
         tmpNode->leftAddress = node;
+        node->parent = tmpNode;
     }
 
     bool ancestorsOnDifferentSides(TreeNode *node) {
@@ -133,43 +143,87 @@ public:
     }
 
 
-    bool findData(int data) {
+    bool findData(int key) {
         TreeNode *currentNode = root;
         while (currentNode != nullptr) {
-            if (currentNode->data == data)return true;
-            if (data >= currentNode->data)currentNode = currentNode->rightAddress;
+            if (currentNode->key == key)return true;
+            if (key >= currentNode->key)currentNode = currentNode->rightAddress;
             else currentNode = currentNode->leftAddress;
         }
         return false;
     }
 
-    void deleteNode(int data) {
-        while(root->data!=data){
-
-        }
-        if (data == root->data && root->leftAddress == nullptr && root->rightAddress == nullptr) delete (root);
-
-        if (data == root->data && root->leftAddress != nullptr && root->rightAddress == nullptr) {
-            root->data = root->leftAddress->data;
-            TreeNode *tmpNode = root->leftAddress;
-            delete (root->leftAddress);
-            root->leftAddress = tmpNode;
+    void deleteNode(int key) {
+        while (root->key != key) {
+            if (key >= root->key)root = root->rightAddress;
+            else root = root->leftAddress;
         }
 
-        if (data == root->data && root->leftAddress == nullptr && root->rightAddress != nullptr) {
-            root->data = root->rightAddress->data;
-            TreeNode *tmpNode = root->rightAddress;
-            delete (root->rightAddress);
-            root->rightAddress = tmpNode;
-        }
+        if (root->leftAddress == nullptr && root->rightAddress == nullptr) {
 
-        if (data == root->data && root->leftAddress == nullptr && root->rightAddress != nullptr) {
-            TreeNode *tmpNode = root->rightAddress;
-            while (tmpNode->leftAddress != nullptr) {
-                tmpNode = tmpNode->leftAddress;
+            root = root->parent;
+
+            if (root->rightAddress->key == key) {
+                delete root->rightAddress;
+                root->rightAddress = nullptr;  //удаление вершины,у которой нет братьев
+            } else {
+                delete root->leftAddress;
+                root->leftAddress = nullptr;
             }
-            root->data = tmpNode->data;
 
+        }
+
+
+        if (key == root->key && root->leftAddress != nullptr && root->rightAddress == nullptr) {
+
+            TreeNode *tmpNode = root;
+            root = root->leftAddress;
+            root->parent = tmpNode->parent;
+            if (root->parent != nullptr) {
+                if (tmpNode->parent->rightAddress == tmpNode)root->parent->rightAddress = root;
+                else root->parent->leftAddress = root;
+            }
+
+        }
+
+        if (key == root->key && root->leftAddress == nullptr && root->rightAddress != nullptr) {
+
+            TreeNode *tmpNode = root;
+            root = root->rightAddress;
+            root->parent = tmpNode->parent;
+            if (root->parent != nullptr) {
+                if (tmpNode->parent->rightAddress == tmpNode)root->parent->rightAddress = root;
+                else root->parent->leftAddress = root;
+            }
+
+        }
+
+        if (key == root->key && root->leftAddress != nullptr && root->rightAddress != nullptr) {
+            root = root->rightAddress;
+
+            while (root->leftAddress != nullptr) {
+                root = root->leftAddress;
+            }
+
+            int tmpData = root->key;
+            if (root->rightAddress != nullptr) {
+                root = root->parent;
+                TreeNode *tmpNode = root->leftAddress->rightAddress;
+                delete (root->leftAddress);
+                root->leftAddress = tmpNode;        // удаление если у удаляемого элемента два узла
+                root->leftAddress->parent = root;
+            } else {
+                root = root->parent;
+                delete (root->leftAddress);
+            }
+            while (root->key != key) {
+                root = root->parent;
+            }
+            root->key = tmpData;
+        }
+
+        while (root->parent != nullptr) {
+            root = root->parent;
         }
     }
 
@@ -177,14 +231,9 @@ public:
 
 int main() {
     BinarySearchTree myTree{};
-    myTree.add(7);
-    myTree.add(3);
-    myTree.add(18);
-    myTree.add(10);
-    myTree.add(22);
-    myTree.add(8);
-    myTree.add(11);
-    myTree.add(26);
+    for(int i=1;i<=10000; i++)myTree.add(i);
+
+
     return 0;
 }
 
